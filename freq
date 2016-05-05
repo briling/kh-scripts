@@ -1,0 +1,9 @@
+#!/bin/bash
+
+f=$(echo $1 | sed s/.out//)
+
+if [ ! -e $f.out ] ; then echo 'file?' ; exit 1 ; fi
+
+sed '/./{H;$!d;};x;/Harmonic Frequencies/!d' $f.out | tail --lines=+7 > $f.freq
+cat $f.freq
+
