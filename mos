@@ -1,0 +1,8 @@
+#!/bin/bash
+
+f=${1/\.out/}
+if [ ! -e $f.out ]          ; then echo 'file?' ; exit 1 ; fi
+if ! grep -q 'mos>' $f.out ; then echo 'mos?' ; exit 1 ; fi
+sed -n -e '/mos>/s/mos>//p' $f.out > $f.molden
+head $f.molden
+
