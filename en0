@@ -1,0 +1,53 @@
+#!/bin/bash
+
+e0=$(
+    (for i in $@
+     do
+     grep "^ Energy =" $i | awk '{print $3}' | tr -s '\n' '+'
+     done
+     echo "0") | bc -l)
+#echo $e0
+
+mask=$(
+    (for i in $@
+     do
+     a=$i
+     a=$(echo $a | sed -e 's/\[/\\\[/g' | sed -e 's/\]/\\\]/g')
+     a=$(echo $a | sed -r 's/\..+//')
+     a=${a%_*}
+     echo -n $a[~_]
+     done
+    ) | sed 's/\[~_\]$//')
+mask=$mask\*.in
+#echo "$mask"
+
+for i in $mask
+  do
+  echo -n -e "$i\t\t"
+  if ! echo $i | egrep -q "x|y"
+    then
+      echo -n -e "\t"
+  fi
+  en=$(echo \( $(grep "^ Energy =" $i | awk '{print $3}')  '-' $e0 \)\*627.51 | bc -l)
+  pr=""
+  suf=""
+  if echo $i | egrep -q "x|y"
+    then
+    if ! grep -q 'H=' $i
+      then
+      pr="\e[1;35m"
+      suf="\e[0m"
+    elif [ ! -e ${i/in/rx} ]
+      then
+      pr="\e[1;34m"
+      suf="\e[0m"
+    fi
+  fi
+  if  ps xr | grep -v 'grep' | grep -q $(echo " $i ")
+    then
+    pr=$pr"\e[41m"
+    suf=${suf:-"\e[0m"}
+  fi
+
+  echo -e $pr$en$suf
+done
