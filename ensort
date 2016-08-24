@@ -1,0 +1,21 @@
+#!/bin/bash
+
+ROOT=$1
+SUF=$2
+
+MASK="$ROOT"'_*.'$SUF'.in'
+R=$RANDOM
+S=2
+B=1
+
+i=$B
+for mol in $(grep 'Energy =' $MASK | sort -k 4 -n | cut -f 1 -d ':') ;
+do
+  mv -vi $mol "$ROOT"_$(printf "%0"$S"d\n" $i)."$SUF".in"$R"
+  i=$(($i+1))
+done
+
+for mol in *.in"$R"
+do
+  mv -vi $mol ${mol/$R}
+done

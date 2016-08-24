@@ -1,0 +1,31 @@
+#!/bin/bash
+
+rx=$1
+in=${rx/rx/in}
+in1=$rx.1.in
+in2=$rx.2.in
+
+bra="point"
+ket="end"
+
+opthead=' $optimize tol=1e-6 step=150 $end'
+
+if [ ! -e $rx  ] ; then echo \? $rx  ; exit 1; fi
+if [   -e $in1 ] ; then echo \! $in1 ; exit 1; fi
+if [   -e $in2 ] ; then echo \! $in2 ; exit 1; fi
+
+n1=$(sed -n -e '/$molecule/q' -e p $in  | cat -n | sed '1,/control/ d' | grep end | head -1 | awk '{print $1}')
+n2=$(($n1+1))
+head $in -n $n1                       |
+  sed /task/d                         |
+  sed '/\$control/ a\ task=optimize'  >  $in1
+echo -e "\n $opthead"                 >> $in1
+tail $in --lines=+$n2 | sed '/./,$!d' |
+  sed -n -e '/$molecule/q' -e p       |
+  sed s/\$optimize/optimize/          >> $in1
+
+cp $in1 $in2
+
+          awk "/$bra/{found=1} found{print; if(/$ket/) exit}"   $rx | sed -e 's/IRC>//' >> $in1
+tac $rx | awk "/$ket/{found=1} found{print; if(/$bra/) exit}" | tac | sed -e 's/IRC>//' >> $in2
+

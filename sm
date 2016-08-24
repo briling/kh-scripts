@@ -1,0 +1,19 @@
+#!/bin/bash
+
+f=${1/\.out/}
+
+if [ ! -e $f.out ]          ; then echo 'file?' ; exit 1 ; fi
+if ! grep -q 'SCAN>' $f.out ; then echo 'scan?' ; exit 1 ; fi
+
+emax=$(grep 'n=' $f.out | sed 's/\(\)\(.*\)E=\s*\(.*\)/\1\3/' | sort -n -r | head -1)
+
+mv $f.{in,bak}
+sed -n -e '/$molecule/q' -e p $f.bak                |
+  sed /task/d                                       |
+  sed '/\$control/ a\ task=optimize\n task=hessian' >  $f.in
+sed -n -e '/SCAN>/s/SCAN>//p' $f.out                |
+  sed '/n=/{x;p;x;}'                                |
+  sed '/./{H;$!d;};x;/'$emax'/!d'                   >> $f.in
+diff $f.{bak,in}
+exit 0
+
