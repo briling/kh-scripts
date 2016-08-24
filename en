@@ -33,7 +33,7 @@ for i in $mask
       suf="\e[0m"
     fi
   fi
-  if pgrep --count --full -u $USER "p $(echo " $i ")" > /dev/null
+  if pgrep --count --full -u $USER "p $i " > /dev/null
     then
     pr=$pr"\e[41m"
     suf=${suf:-"\e[0m"}
