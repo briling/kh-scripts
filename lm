@@ -1,0 +1,17 @@
+#!/bin/bash
+
+f=${1/\.in}
+f=${f/\.out}
+if [ ! -e $f.out ]       ; then echo 'file?' ; exit 1 ; fi
+if grep -q 'MOL>' $f.out ; then echo 'mol!'  ; exit 1 ; fi
+
+lines=$(grep 'mol>' -c $f.out)
+mols=$(grep 'mol>$molecule' -c $f.out)
+n=$(($lines/$mols))
+bra=$(($mols*$n-$n+1))
+
+mv $f.{in,bak}
+sed -n -e '/$molecule/q' -e p  $f.bak  > $f.in
+grep 'mol>' $f.out | sed -n "$bra,\$p" | sed 's/mol>//' >> $f.in
+diff $f.{bak,in} | tail
+
