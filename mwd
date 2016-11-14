@@ -1,0 +1,30 @@
+#!/bin/bash
+T=${1:-qm}
+dir=$(date +"%Y-%m-%d")
+if [ -e $dir ] ; then echo failed ; return ;  fi
+mkdir $dir
+cd $dir
+
+case "$T" in
+qm     ) tol='1e-6'; mem=64  ;  disk=64 ; theory='qm_n3'; bas='qm.in'    suf='qm'    ;;
+rimp2  ) tol='1e-5'; mem=128 ; disk=512 ; theory='rimp2'; bas='basis.in' suf='1.mp2' ;;
+dft    ) tol='5e-5'; mem=64  ; disk=256 ; theory='dft';   bas='basis.in' suf='1.df'  ;;
+*      ) tol='1e-5'; mem=128 ; disk=128 ; theory=$T;      bas='basis.in' suf=1.$T    ;;
+esac
+
+mol=\
+"\$system mem=$mem disk=-$disk \$end
+\$control
+ task=optimize
+ theory=$theory
+ basis=$bas
+\$end
+
+\$optimize tol=$tol step=150 \$end
+optimize back=1 mass=0 rad=0.0625 points=500 tol=$tol \$end
+
+\$molecule
+ z-matrix
+\$end
+"
+echo "$mol" > mol.$suf.in
