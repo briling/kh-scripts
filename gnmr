@@ -1,0 +1,25 @@
+#!/bin/bash
+
+f=${1/\.out}
+
+if [ ! -e $f.out ]        ; then echo 'file?' ; exit 1 ; fi
+if ! grep -q 'NMR' $f.out ; then echo 'nmr?'  ; exit 1 ; fi
+if [ -e $f.nmr ]          ; then echo 'file!' ; exit 1 ; fi
+
+shiftpar=$(grep 'shift' $f.out)
+
+echo                 >  $f.nmr
+echo "$shiftpar"     >> $f.nmr
+echo                 >> $f.nmr
+
+shifts=$(echo "$shiftpar" | awk '{print $7}')
+echo '$molecule'     >> $f.nmr
+echo ' cart'         >> $f.nmr
+sed -n '/Atomic/,/#/p' $f.out | head --lines=-1 | tail --lines=+2 | (
+  for sh in $shifts; do
+    read ac; echo "  $ac   type=$sh" ;
+  done)              >> $f.nmr
+echo -e '$end\n'     >> $f.nmr
+
+cat $f.nmr
+
