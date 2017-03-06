@@ -1,0 +1,42 @@
+#!/bin/bash
+
+f=${1/\.out}
+
+if [ ! -e $f.out ]                 ; then echo 'file?' ; exit 1 ; fi
+if ! grep -q 'Spin Density' $f.out ; then echo 'esr?'  ; exit 1 ; fi
+if [ -e $f.esr ]                   ; then echo 'file!' ; exit 1 ; fi
+
+declare -A gn
+gn[1]=5.58569468
+gn[6]=1.4048236
+gn[7]=0.40376100
+gn[23]=1.47106
+scale=285.5446166075222197
+
+declare -A mult
+mult[1]=2
+mult[6]=2
+mult[7]=3
+mult[23]=8
+
+sed '/./{H;$!d;};x;/Atomic partitions/!d' $f.out > $f.esr
+
+sdf=$(sed '/./{H;$!d;};x;/Spin Density/!d' $f.out)
+echo           >> $f.esr
+echo "$sdf"    >> $f.esr
+echo           >> $f.esr
+
+sd=$(echo "$sdf" | tail --lines=+3 | awk '{print $3}')
+echo '$molecule'     >> $f.esr
+echo ' cart'         >> $f.esr
+sed -n '/Atomic/,/#/p' $f.out | head --lines=-1 | tail --lines=+2 | (
+  for val in $sd; do
+    read ac
+    n=$(echo $ac | awk '{print $1}');
+    a=$(echo ${gn[$n]:-0} \* $scale \* $val | bc -l);
+    echo "  $ac   type=$(printf "% 8.3lf\n" $a)x${mult[$n]:-?}" ;
+  done)              >> $f.esr
+echo -e '$end\n'     >> $f.esr
+
+cat $f.esr
+
