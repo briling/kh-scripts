@@ -1,0 +1,15 @@
+#!/bin/bash
+if [ ! -e $1 ] ; then exit 1 ; fi
+if grep -q 'Coordinates: internal' $1 ; then
+  if grep -q 'Saddle' $1; then
+    egrep "over|max.\ g" $1 | sed 'N;s/\n/ /' | cat -n
+  else
+    grep "max.\ g" $1 | cat -n
+  fi
+else
+  if grep -q 'Saddle' $1; then
+    egrep " c =|Max. Gradient" $1 | sed 'N;s/\n/ /' | cat -n | colrm 44 57 | colrm 57 67
+  else
+    grep 'Max. Gradient' $1 | cat -n
+  fi
+fi
