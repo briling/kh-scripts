@@ -1,0 +1,16 @@
+#!/bin/bash
+
+f=${1/\.out/}
+if [ ! -e $f.out ] ; then exit 1 ; fi
+
+if grep -q 'NUMERICAL AND ANALYTICAL GRADIENT' $f.out
+then
+  sed -n -e '0,/NUMERICAL AND ANALYTICAL/d' -e '/eng>/s/eng>//p' $f.out >> $f.in
+elif grep -q 'ANALYTICAL COMPUTATION' $f.out
+then
+  sed -n -e '0,/ANALYTICAL/d' -e '/eng>/s/eng>//p' $f.out >> $f.in
+else
+  sed -n -e '/eng>/s/eng>//p' $f.out >> $f.in
+fi
+
+sed '/./{H;$!d;};x;/Harmonic Frequencies/!d' $f.out | tail --lines=+7 | head
