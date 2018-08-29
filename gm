@@ -1,0 +1,11 @@
+#!/bin/bash
+f=${1/\.in}
+f=${f/\.out}
+if [ ! -e $f.out ]         ; then echo 'file?' ; exit 1 ; fi
+if ! grep -q 'MOL>' $f.out ; then echo 'mol?'  ; exit 1 ; fi
+mv $f.{in,bak}
+sed -n -e '/$molecule/q' -e p                     $f.bak  > $f.in
+sed -n -e '/MOL>/s/MOL>//p'                       $f.out >> $f.in
+sed -n -e '/dipole =/h' -e '${g;/.*0\.000.*/d;p}' $f.out >> $f.in
+diff $f.{bak,in} | tail
+
