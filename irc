@@ -1,0 +1,27 @@
+#!/bin/bash
+
+#=========================================================================
+function head(){       # $mol
+  sed -i /task/d                           $mol.in
+  sed -i '/\$control/ a\ task=irc'         $mol.in
+  sed -i s/\$optimize/optimize/            $mol.in
+  if grep -q back $mol.in ; then
+    sed -i '/back/ s/optimize/\$optimize/' $mol.in
+    sed -i s/back=0/back=1/                $mol.in
+  else
+    opthead='$optimize back=1 mass=0 rad=0.0625 tol=1e-6 points=512 $end\n'
+    sed -i "/\$molecule/i $opthead"        $mol.in
+  fi
+}
+#==========================================================================
+if [   -z "$1" ]; then echo '?';      exit 1 ; fi
+if [ ! -e "$1" ]; then echo 'file?' ; exit 1 ; fi
+p=${2:-p}
+mol=${1/\.in/}
+head
+$p $mol.{in,out1} &
+sleep 2
+sed -i s/back=1/back=0/ $mol.in
+$p $mol.{in,out2} &
+wait
+
