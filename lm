@@ -2,16 +2,49 @@
 
 f=${1/\.in}
 f=${f/\.out}
-if [ ! -e $f.out ]       ; then echo 'file?' ; exit 1 ; fi
-if grep -q 'MOL>' $f.out ; then echo 'mol!'  ; exit 1 ; fi
+if [ ! -e $f.out ]         ; then echo 'file?' ; exit 1 ; fi
+if ! grep -q 'mol>' $f.out ; then echo 'mol?'  ; exit 1 ; fi
 
-lines=$(grep 'mol>' -c $f.out)
-mols=$(grep 'mol>$molecule' -c $f.out)
-n=$(($lines/$mols))
-bra=$(($mols*$n-$n+1))
+lines=$(grep -c 'mol>' $f.out)
+mols=$(grep -c 'mol>$molecule' $f.out)
+n=$(($lines / $mols))
 
-mv $f.{in,bak}
-sed -n -e '/$molecule/q' -e p  $f.bak  > $f.in
-grep 'mol>' $f.out | sed -n "$bra,\$p" | sed 's/mol>//' >> $f.in
+if [ -z "$2" ]; then
+
+  if grep -q 'MOL>' $f.out ; then echo 'mol!'  ; exit 1 ; fi
+  bra=$(($mols*$n-$n+1))
+  mv $f.{in,bak}
+  sed -n -e '/$molecule/q' -e p                    $f.bak  > $f.in
+  grep 'mol>' $f.out | sed -n "$bra,\$p" | sed 's/mol>//' >> $f.in
+
+else
+
+  k=${2:-$n}
+  k=$(($k-2))
+  bra=$(($k*$n+1))
+  ket=$(($bra+$n-1))
+
+  mv $f.{in,bak}
+  sed -n -e '/$molecule/q' -e p                     $f.bak  > $f.in
+  sed -n -e '/mol>/s/mol>//p' $f.out | sed -n "$bra,$ket"p >> $f.in
+
+fi
+
 diff $f.{bak,in} | tail
+
+## old lm:
+# f=${1/\.in}
+# f=${f/\.out}
+# if [ ! -e $f.out ]       ; then echo 'file?' ; exit 1 ; fi
+# if grep -q 'MOL>' $f.out ; then echo 'mol!'  ; exit 1 ; fi
+#
+# lines=$(grep 'mol>' -c $f.out)
+# mols=$(grep 'mol>$molecule' -c $f.out)
+# n=$(($lines/$mols))
+# bra=$(($mols*$n-$n+1))
+#
+# mv $f.{in,bak}
+# sed -n -e '/$molecule/q' -e p  $f.bak  > $f.in
+# grep 'mol>' $f.out | sed -n "$bra,\$p" | sed 's/mol>//' >> $f.in
+# diff $f.{bak,in} | tail
 
